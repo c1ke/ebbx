@@ -147,7 +147,7 @@
       </div>
       <div class="split-ads">
         <div class="info-ads">
-          <ads type="ypa_banner" :size="{ width: 620, height: 120 }" />
+          <ads type="ypa_leaderboard" :size="{ width: 728, height: 90 }" />
         </div>
         <div class="shrinked-ads">
           <ads type="iit_banner" :size="{ width: 440, height: 120 }" />
@@ -806,13 +806,13 @@ export default {
 .split-ads {
   align-items: center;
   display: flex;
-  height: 10rem;
+  height: 8rem;
   justify-content: center;
+  margin-top: 1rem;
 }
 
 // ads
-// > 1000px
-@media (min-width: 1000px) {
+@media (min-width: 840px) {
   .info-ads {
     display: flex;
   }
@@ -820,8 +820,8 @@ export default {
     display: none;
   }
 }
-// < 1000px
-@media (max-width: 999px) {
+// mobile
+@media (max-width: 839px) {
   .info-ads {
     display: none;
   }

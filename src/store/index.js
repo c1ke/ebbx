@@ -1,3 +1,4 @@
+import _ from 'lodash'
 import Vue from 'vue'
 import Vuex from 'vuex'
 import store from 'store'
@@ -186,7 +187,14 @@ const getters = {
     if (!state.searchResultIds.length) {
       return []
     }
-    return state.animeList.filter((anime) => state.searchResultIds.indexOf(anime.anime_id) >= 0)
+    let result = _.keyBy(
+      state.animeList.filter((anime) => state.searchResultIds.indexOf(anime.anime_id) >= 0),
+      'anime_id',
+    )
+    result = state.searchResultIds.map((id) => result[id])
+    // filter out empty episode anime
+    result = result.filter((x) => !!x)
+    return result
   },
   animeDirectory(state) {
     if (!state.directoryParams) {

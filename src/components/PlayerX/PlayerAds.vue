@@ -1,13 +1,16 @@
 <template>
   <div class="player-ad" v-if="!isMobile && showAd">
-    <div class="ads-wrapper" v-if="adsType === 1 && !adDismissed">
+    <div class="ads-wrapper" v-if="[1, 2].indexOf(adsType) >= 0 && !adDismissed">
       <div>
-        <ads type="iit_box" :size="{ width: 480, height: 320 }" />
+        <ads type="ucf_box2_2" :size="{ width: 336, height: 280 }" />
         <i class="fe-x" @click="adDismissed = true" />
       </div>
     </div>
-    <div class="ads-banner" v-if="adsType === 2">
-      <ads type="ypa_banner" :size="{ width: 620, height: 120 }" />
+    <div class="ads-wrapper" v-if="adsType === 3 && !adDismissed">
+      <div>
+        <ads type="ucf_box2_1" :size="{ width: 336, height: 280 }" />
+        <i class="fe-x" @click="adDismissed = true" />
+      </div>
     </div>
   </div>
 </template>
@@ -43,7 +46,7 @@ export default {
     },
   },
   mounted() {
-    this.adsType = Math.floor(Math.random() * 2) + 1
+    this.adsType = Math.floor(Math.random() * 3) + 1
   },
 }
 </script>

@@ -2,7 +2,7 @@
   <ul>
     <template v-for="(anime, index) in items">
       <li v-if="adSize && index % adMod === adStartPos">
-        <ads type="hpgrid_native" :size="adSize" />
+        <ads type="iit_hpgrid_native" :size="adSize" />
       </li>
       <li :key="anime.anime_id">
         <router-link :to="{ name: 'anime', params: { animeId: anime.anime_id, seasonId: anime.season_id } }">

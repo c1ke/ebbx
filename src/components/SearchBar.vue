@@ -207,7 +207,6 @@ export default {
           this.enqueueNotification({ type: 'info', text: '沒有符合條件的結果', duration: 2000 })
           return
         }
-        // sort similarity from high to low
         const reducedEpisodeCounting = docs.reduce((acc, doc) => [
           ...acc,
           `${doc.anilist_id}\0${doc.episode}`,
@@ -218,10 +217,15 @@ export default {
         ], [])
         const [aid, ep] = getMostFrequentItem(reducedEpisodeCounting).split('\0')
         const [_, time] = getMostFrequentItem(reducedTimeCounting).split('\0')
-        const doc = docs.find((d) =>
+        let doc = docs.find((d) =>
           String(d.anilist_id) === aid &&
           String(d.episode) === ep &&
           String(d.at) === time)
+        // if no result by intersection algorithm
+        // fallback to highest similarity result
+        if (!doc) {
+          [doc] = docs.sort((a, b) => b.similarity - a.similarity)
+        }
         const {
           at,
           filename: file,

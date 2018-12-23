@@ -63,6 +63,7 @@ router.afterEach(async (to) => {
   window.requestAnimationFrame(() => {
     window.ga('set', 'page', url)
     window.ga('send', 'pageview')
+    window.dispatchEvent(new CustomEvent('routechange'))
   }, 50)
 })
 

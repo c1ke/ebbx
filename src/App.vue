@@ -72,6 +72,12 @@
       <main>
         <loader v-if="!loaded" />
         <router-view v-if="loaded" />
+        <div v-if="showSideAds" class="side-ads" style="left: 0">
+          <ads type="ucf_skyscraper" :size="{ width: 160, height: 600 }" />
+        </div>
+        <div v-if="showSideAds" class="side-ads" style="right: 0">
+          <ads type="ucf_skyscraper" :size="{ width: 160, height: 600 }" />
+        </div>
       </main>
       <footer>
         <div>
@@ -114,10 +120,8 @@
 </template>
 
 <script>
-import store from 'store'
 import { mapState, mapActions, mapMutations } from 'vuex'
 import debounce from 'lodash/debounce'
-import API from '@/api'
 
 import Ads from '@/components/Ads'
 import Ebuko from '@/components/Ebuko'
@@ -141,6 +145,7 @@ export default {
       year: new Date().getFullYear(),
       loaded: false,
       adsDismissed: false,
+      showSideAds: false,
     }
   },
   computed: {
@@ -188,6 +193,8 @@ export default {
 
     // listeners
     const onWindowResize = debounce(() => {
+      this.showSideAds = !!window.matchMedia('(min-width: 1856px)').matches
+
       const isCommentsSided = !window.matchMedia('(max-width: 1135px)').matches
       const isMobile = !!window.matchMedia('(max-width: 839px)').matches
       const showEbuko = !!window.matchMedia('(min-width: calc(1536px + (110px + 64px) * 2))').matches
@@ -371,30 +378,6 @@ input[type="text"] {
   z-index: 10;
 }
 
-.mfloat-ads {
-  background: #1e1f2e;
-  bottom: 0;
-  height: 120px;
-  left: 0;
-  position: fixed;
-  z-index: 99;
-
-  > i {
-    align-items: center;
-    background: #52596d;
-    border-radius: 50%;
-    cursor: pointer;
-    display: flex;
-    font-size: 1.2rem;
-    height: 2rem;
-    justify-content: center;
-    position: absolute;
-    right: 0;
-    top: -.75rem;
-    width: 2rem;
-  }
-}
-
 nav {
   align-items: center;
   display: flex;
@@ -475,22 +458,12 @@ main {
   }
 }
 
-.side-ad {
-  opacity: .5;
-  position: fixed;
-  top: 50%;
-  transform: translateY(-50%);
-
-  &:hover { opacity: .8; }
-}
-
 footer {
   align-items: center;
   display: flex;
   font-size: .8rem;
-  height: 9rem;
+  height: 12rem;
   justify-content: center;
-  padding-bottom: 1rem;
   text-align: center;
   width: 100%;
 
@@ -511,5 +484,40 @@ footer {
     margin-top: 1rem;
     padding: 0 4rem;
   }
+}
+
+// ads
+
+.mfloat-ads {
+  background: #1e1f2e;
+  bottom: 0;
+  height: 120px;
+  left: 0;
+  position: fixed;
+  z-index: 99;
+
+  > i {
+    align-items: center;
+    background: #52596d;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    font-size: 1.2rem;
+    height: 2rem;
+    justify-content: center;
+    position: absolute;
+    right: 0;
+    top: -.75rem;
+    width: 2rem;
+  }
+}
+
+.side-ads {
+  opacity: .5;
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+
+  &:hover { opacity: .8; }
 }
 </style>

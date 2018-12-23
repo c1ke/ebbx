@@ -56,7 +56,7 @@
     </section>
     <section v-for="(animes, type) in informatizedAnimeList" :key="type">
       <div class="info-ads">
-        <ads type="ypa_banner" :size="{ width: 620, height: 120 }" />
+        <ads type="ypa_leaderboard" :size="{ width: 728, height: 90 }" />
       </div>
       <h1>{{ type }}</h1>
       <div :class="`collapsable${expandedBlocks.indexOf(type) >= 0 ? '' : ' collapsed'}`">

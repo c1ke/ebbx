@@ -31,9 +31,3 @@ export default {
   },
 }
 </script>
-
-<style lang="scss" scoped>
-article {
-  padding: 0 2rem;
-}
-</style>
