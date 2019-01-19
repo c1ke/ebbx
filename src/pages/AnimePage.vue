@@ -7,9 +7,20 @@
         <div class="player-container-inner">
           <div class="player" :style="{ opacity: !activeEpisodeId ? 0 : 1 }">
             <playerx
+              v-if="!isPeakLimited"
               :on-reference="linkPlayerRef"
               :vdata="vdata"
             />
+            <div class="message peak-hour-limit" v-if="isPeakLimited">
+              <div class="inner">
+                <h1>完全會員制實施中</h1>
+                <div class="text">
+                  由於目前為播放高峰時段，為保障用戶享有穩定的觀看體驗
+                  網站現正實施完全會員制，請<router-link class="link" :to="{ name: 'account' }">按此登入</router-link>帳號後再次進行播放
+                  造成您的不便，十分抱歉 (>_<)
+                </div>
+              </div>
+            </div>
             <portal-target slim name="comments" v-if="isCommentsSided" />
           </div>
           <div class="message" v-if="!activeEpisodeId">
@@ -198,6 +209,7 @@ export default {
   },
   data() {
     return {
+      isPeakLimited: false,
       playerRef: null,
       danmakuRef: null,
       vdata: null,
@@ -272,7 +284,9 @@ export default {
       }
       this.activeEpisodeId = episodeId
       if (!this.activeEpisode.sl) {
-        this.enqueueNotification({ type: 'info', text: '讀取影片時發生未知錯誤<br>請嘗試重新載入網頁<br>如問題持續，請向我們反映', duration: 6000 })
+        if (!this.isPeakLimited) {
+          this.enqueueNotification({ type: 'info', text: '讀取影片時發生未知錯誤<br>請嘗試重新載入網頁<br>如問題持續，請向我們反映', duration: 6000 })
+        }
         return
       }
       // update video data
@@ -280,6 +294,7 @@ export default {
         src: this.activeEpisode.sl,
         roomId: md5(`${this.activeSeason.id}:${this.activeEpisode.title}`),
         epLength: this.activeEpisode.duration,
+        title: `${this.playlist.anime.name_chi} ${this.activeSeason.season_title} ${this.activeEpisode.title}`,
       }
       // update watch history
       const doRestore = this.watchHistory && this.watchHistory.title === this.activeEpisode.title
@@ -357,9 +372,11 @@ export default {
       }
     },
     async loadSeason(animeId) {
-      const { success, list } = await API.fetchSeason(animeId)
-      if (!success) {
+      const { status, list } = await API.fetchSeason(animeId)
+      if (status === 404) {
         throw new Error('404')
+      } else if (status === 401) {
+        this.isPeakLimited = true
       }
       // fetch watch history if signed in
       if (this.user) {
@@ -476,6 +493,54 @@ export default {
       font-size: 1.5rem;
       font-weight: 100;
       z-index: 2;
+    }
+
+    .peak-hour-limit {
+      align-items: center;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      justify-content: center;
+      padding: 10%;
+      width: 100%;
+
+      .inner {
+        width: 33.6rem;
+
+        // mobile
+        @media (max-width: 839px) {
+          width: 100%;
+        }
+      }
+
+      h1 {
+        color: #fff;
+        background: -webkit-linear-gradient(top, #fff, #ccc);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        display: inline-block;
+        font-size: 2rem;
+        font-weight: 100;
+        line-height: 3rem;
+        margin: 0 0 2rem;
+
+        // mobile
+        @media (max-width: 839px) {
+          font-size: 1.2rem;
+          margin: 0;
+        }
+      }
+
+      .text {
+        color: #b1b4bb;
+        font-size: 1.25rem;
+        line-height: 2rem;
+
+        // mobile
+        @media (max-width: 839px) {
+          font-size: .9rem;
+        }
+      }
     }
 
     // tablet, break comment section

@@ -11,6 +11,8 @@
 </template>
 
 <script>
+import { getFormattedTime } from '@/utility'
+
 export default {
   data() {
     return {
@@ -18,8 +20,11 @@ export default {
     }
   },
   computed: {
+    player() {
+      return this.$parent.$parent
+    },
     video() {
-      return this.$parent.$parent.video
+      return this.player.video
     },
   },
   methods: {
@@ -60,7 +65,8 @@ export default {
       this.resumeVideo = !this.video.paused
       this.video.pause()
       this.snapshotImage = URL.createObjectURL(blob)
-      window.ga('send', 'event', 'Playback', 'capture', this.title)
+      const time = getFormattedTime(this.video.currentTime)
+      window.ga('send', 'event', 'Playback', 'capture', `${this.player.vdata.title} @ ${time}`)
     },
     resetSnapshotImage() {
       this.snapshotImage = null

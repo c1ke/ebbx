@@ -9,6 +9,15 @@
     <div class="loading" v-if="isBuffering">
       <loader />
     </div>
+    <div class="resource-loading" v-if="resourceLoading">
+      <div class="caption">全速載入中⋯</div>
+      <div class="longfazers">
+        <span />
+        <span />
+        <span />
+        <span />
+      </div>
+    </div>
     <div
       :class="{ 'controls': true, 'idle': idleClassActive }"
       @mouseenter="onMouseEnterListener"
@@ -63,6 +72,7 @@ export default {
   data() {
     return {
       player: null,
+      resourceLoading: false,
       sourceLoader: null,
       hasPlayed: false,
       isFullscreen: false,
@@ -84,7 +94,8 @@ export default {
       isMobile: (state) => state.isMobile,
     }),
     peekSrc() {
-      return this.vdata.src.replace('/s/', '/p/').replace('/master.csv', '.jpg')
+      const [_, path] = this.vdata.src.match(/(\/[0-9a-f]{64,}\/.+)$/)
+      return `https://ebb.io/resload/p${path}`.replace('/master.csv', '.jpg')
     },
     video() {
       return this.$refs.video
@@ -251,8 +262,20 @@ export default {
       this.player = new window.shaka.Player(this.video)
       this.player.configure({
         streaming: {
-          bufferingGoal: 60,
+          bufferBehind: 25,
+          bufferingGoal: 25,
+          rebufferingGoal: 25,
+          retryParameters: {
+            timeout: 1000 * 5,
+            maxAttempts: 5,
+          },
         },
+      })
+      this.player.addEventListener('loading', () => {
+        this.resourceLoading = true
+      })
+      this.player.addEventListener('trackschanged', () => {
+        this.resourceLoading = false
       })
       this.player.addEventListener('buffering', (event) => {
         this.isBuffering = event.buffering
@@ -307,6 +330,118 @@ export default {
   right: 0;
   top: 0;
   z-index: 99;
+}
+
+@keyframes lf1 {
+  0% {
+    left: 200%;
+  }
+  to {
+    left: -200%;
+    opacity: 0;
+  }
+}
+
+@keyframes lf2 {
+  0% {
+    left: 200%;
+  }
+  to {
+    left: -200%;
+    opacity: 0;
+  }
+}
+
+@keyframes lf3 {
+  0% {
+    left: 200%;
+  }
+  to {
+    left: -100%;
+    opacity: 0;
+  }
+}
+
+@keyframes lf4 {
+  0% {
+    left: 200%;
+  }
+  to {
+    left: -100%;
+    opacity: 0;
+  }
+}
+
+@keyframes speeder {
+  0% { transform: translate(2px, 1px) rotate(0deg); }
+  10% { transform: translate(-1px, -3px) rotate(-1deg); }
+  20% { transform: translate(-2px, 0) rotate(1deg); }
+  30% { transform: translate(1px, 2px) rotate(0deg); }
+  40% { transform: translate(1px, -1px) rotate(1deg); }
+  50% { transform: translate(-1px, 3px) rotate(-1deg); }
+  60% { transform: translate(-1px, 1px) rotate(0deg); }
+  70% { transform: translate(3px, 1px) rotate(-1deg); }
+  80% { transform: translate(-2px, -1px) rotate(1deg); }
+  90% { transform: translate(2px, 1px) rotate(0deg); }
+  to { transform: translate(1px, -2px) rotate(-1deg); }
+}
+
+.resource-loading {
+  background: #000;
+  align-items: center;
+  bottom: 0;
+  display: flex;
+  justify-content: center;
+  left: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+  z-index: 110;
+
+  .caption {
+    animation: speeder .75s linear infinite;
+    font-size: 1.5rem;
+  }
+
+  .longfazers {
+    bottom: 0;
+    left: 0;
+    overflow: hidden;
+    position: absolute;
+    right: 0;
+    top: 0;
+
+    span {
+      background: #888;
+      background: linear-gradient(to right, transparent, #888 20%, #888 80%, transparent 100%);
+      height: 2px;
+      position: absolute;
+      width: 20%;
+
+      &:nth-child(1) {
+        animation: lf1 .6s linear infinite;
+        animation-delay: -5s;
+        top: 20%;
+      }
+
+      &:nth-child(2) {
+        animation: lf2 .8s linear infinite;
+        animation-delay: -1s;
+        top: 40%;
+      }
+
+      &:nth-child(3) {
+        animation: lf3 .6s linear infinite;
+        top: 60%;
+      }
+
+      &:nth-child(4) {
+        animation: lf4 .5s linear infinite;
+        animation-delay: -3s;
+        top: 80%;
+      }
+    }
+  }
 }
 
 // for click-to-seek

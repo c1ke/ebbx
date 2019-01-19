@@ -14,7 +14,7 @@
         </h2>
         <div class="row">
           <div class="description">
-            選擇希望連結至 ebb 帳號的登入方式
+            簡單一按，即可登入並連結至 ebb
           </div>
           <div class="buttons">
             <div class="button" @click="doGoogleAuth">

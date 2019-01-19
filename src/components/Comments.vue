@@ -7,7 +7,7 @@
             <span class="time">
               <time @click="jumpTo(item.time)">{{ getFormattedTime(item.time) }}</time>
             </span>
-            <span class="text" v-html="item.text" />
+            <span class="text" :title="item.title" v-html="item.text" />
             <span class="date" :title="getFullDate(item.date)">
               <time>{{ getRelativeDate2(item.date) }}</time>
               <span class="actions">
@@ -18,6 +18,12 @@
         </recycle-scroller>
         <form @submit.prevent="sendMessage">
           <input type="text" ref="textInput" />
+          <div class="send-tips" v-if="user">
+            <marquee-text :paused="marqueePaused" :duration="20" :repeat="2">
+              <span>請勿發送罵戰/劇透/洗版/廣告等評論，一經發現或被檢舉核實後，將會刪除相關評論甚至封鎖帳號。如發現不當評論，點擊右方的時間即可檢舉。　　　　</span>
+            </marquee-text>
+          </div>
+          <div class="guest-padding" v-else />
           <div class="guest-message" v-if="!user">
             <router-link :to="{ name: 'account' }">登入後即可發表評論 ( ´･ω･)</router-link>
           </div>
@@ -52,16 +58,20 @@
 <script>
 import { mapState, mapActions } from 'vuex'
 import twemoji from 'twemoji'
+import MarqueeText from 'vue-marquee-text-component'
 
 import Modal from '@/components/Modal'
 import ReportCommentForm from '@/components/ReportCommentForm'
 import { getFormattedTime, getFullDate, getRelativeDate2 } from '@/utility'
+
+const convertDom = document.createElement('div')
 
 export default {
   name: 'comments',
   components: {
     Modal,
     ReportCommentForm,
+    MarqueeText,
   },
   props: {
     vdata: {
@@ -91,9 +101,11 @@ export default {
   data() {
     return {
       showComments: false,
+      isSendingMessage: false,
       isCollapsed: false,
       reportModalData: null,
       messageList: [],
+      marqueePaused: true,
     }
   },
   computed: {
@@ -119,6 +131,9 @@ export default {
     getFullDate,
     getRelativeDate2,
     sendMessage() {
+      if (this.isSendingMessage) {
+        return
+      }
       const { textInput } = this.$refs
       const text = textInput.value.slice(0, 60).trim()
       if (text === '/bg') {
@@ -145,19 +160,23 @@ export default {
         shake()
         return
       }
+      this.isSendingMessage = true
       this.$socket.emit('send-message', { text, offset, length: this.epLength }, ({ status }) => {
         if (status === 406) {
+          this.enqueueNotification({ type: 'alert', text: '請稍候再試', duration: 2000 })
           shake()
         } else {
           if (status === 403) {
             this.enqueueNotification({ type: 'alert', text: '你的帳號曾發表不當評論<br>因此不能再發表評論<br>如有問題，請與我們聯絡', duration: 8000 })
           } else if (status === 429) {
-            this.enqueueNotification({ type: 'alert', text: '請稍候再發送', duration: 2500 })
+            this.enqueueNotification({ type: 'alert', text: '評論發送太頻繁', duration: 2500 })
+            shake()
           } else if (status !== 200) {
             console.log('cannot send message', status)
           }
           textInput.value = ''
         }
+        this.isSendingMessage = false
       })
     },
     // https://stackoverflow.com/a/21822316/3896501
@@ -197,11 +216,29 @@ export default {
           }
         },
       })
+      message.text = message.text.replace(/((\d:)?(\d{1,2}:\d{1,2}))/g, (match, group) => `<a href="#seekToTime">${group}</a>`)
+      convertDom.innerHTML = message.text
+      message.title = convertDom.textContent
       message.time = this.epLength * message.offset
       return message
     },
     jumpTo(time) {
       this.player.video.currentTime = Math.max(0, time - 0.5)
+    },
+    handleCommentTimeSeek(event) {
+      if (event.target.nodeName === 'A' && event.target.hash === '#seekToTime') {
+        event.preventDefault()
+        const timeStr = event.target.textContent
+        // convert str to seconds
+        const parts = timeStr.split(':')
+        let s = 0
+        let m = 1
+        while (parts.length > 0) {
+          s += m * +parts.pop()
+          m *= 60
+        }
+        this.jumpTo(s)
+      }
     },
   },
   watch: {
@@ -216,11 +253,24 @@ export default {
   },
   beforeDestroy() {
     this.$socket.emit('leave-chatroom', this.roomId, () => {})
+    document.removeEventListener('click', this.handleCommentTimeSeek)
   },
   mounted() {
+    const startMarquee = () => {
+      setTimeout(() => {
+        this.marqueePaused = false
+        // if animation ended
+        setTimeout(() => {
+          this.marqueePaused = true
+          startMarquee()
+        }, 20000)
+      }, 2500)
+    }
+    startMarquee()
     this.$socket.emit('join-chatroom', this.roomId, ({ messages }) => {
       this.setInitialMessages(messages)
     })
+    document.addEventListener('click', this.handleCommentTimeSeek)
   },
 }
 </script>
@@ -351,6 +401,14 @@ export default {
             cursor: text;
             height: 20px;
           }
+
+          :global(a) {
+            text-decoration: none;
+
+            &:hover {
+              text-decoration: underline;
+            }
+          }
         }
 
         > .date {
@@ -384,7 +442,7 @@ export default {
     }
 
     form {
-      padding: 0 1rem 1rem;
+      padding: 0 1rem;
       position: relative;
 
       input {
@@ -396,6 +454,28 @@ export default {
         &:global(.invalid) {
           animation: shake .6s cubic-bezier(.36,.07,.19,.97);
         }
+      }
+
+      .send-tips {
+        color: #baa;
+        margin: .5rem 0;
+        margin-left: -1rem;
+        mask-image: linear-gradient(to right,
+          transparent 0%,
+          black 1rem,
+          black calc(100% - 1rem),
+          transparent 100%
+        );
+        width: calc(100% + 2rem);
+
+        span {
+          font-size: .8rem;
+          padding-left: 1rem;
+        }
+      }
+
+      .guest-padding {
+        padding-bottom: 1rem;
       }
 
       .guest-message {
@@ -410,9 +490,10 @@ export default {
         user-select: none;
 
         > a {
+          color: #fff;
           background: -webkit-linear-gradient(left, #fa9696, #ffe2ac, #f9f9ac, #a8ffbf, #b0ffff, #bbcaff, #e4a2ff);
           -webkit-background-clip: text;
-          color: transparent;
+          -webkit-text-fill-color: transparent;
           text-decoration: none;
         }
       }
@@ -438,9 +519,10 @@ export default {
     z-index: -1;
 
     i {
+      color: #7ca4ff;
       background: -webkit-linear-gradient(-45deg, #76d2e7, #907cff);
       -webkit-background-clip: text;
-      color: transparent;
+      -webkit-text-fill-color: transparent;
       font-size: 3.5rem;
     }
 
